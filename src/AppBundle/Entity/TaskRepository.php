@@ -11,7 +11,8 @@ class TaskRepository extends EntityRepository
     public function findByDate(\DateTime $date)
     {
         return $this->createQueryBuilder('t')
-            ->andWhere('DATE(t.doneBefore) = :date')
+            ->andWhere(':date >= DATE(t.doneAfter)')
+            ->andWhere(':date <= DATE(t.doneBefore)')
             ->setParameter('date', $date->format('Y-m-d'))
             ->getQuery()
             ->getResult();
