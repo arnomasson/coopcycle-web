@@ -34,6 +34,7 @@ use AppBundle\Form\GeoJSONUploadType;
 use AppBundle\Form\MaintenanceType;
 use AppBundle\Form\SettingsType;
 use AppBundle\Form\StripeLivemodeType;
+use AppBundle\Form\Sylius\Promotion\CreditNoteType;
 use AppBundle\Form\TaxationType;
 use AppBundle\Form\ZoneCollectionType;
 use AppBundle\Service\ActivityManager;
@@ -42,24 +43,28 @@ use AppBundle\Service\OrderManager;
 use AppBundle\Service\SettingsManager;
 use AppBundle\Service\TaskManager;
 use AppBundle\Sylius\Order\OrderTransitions;
+use AppBundle\Sylius\Promotion\Action\FixedDiscountPromotionActionCommand;
+use AppBundle\Sylius\Promotion\Checker\Rule\IsCustomerRuleChecker;
 use AppBundle\Utils\MessageLoggingTwigSwiftMailer;
 use Cocur\Slugify\SlugifyInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use FOS\UserBundle\Model\UserInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Ramsey\Uuid\Uuid;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sylius\Bundle\PromotionBundle\Form\Type\PromotionCouponType;
 use Sylius\Component\Order\Model\OrderInterface;
 use Sylius\Component\Payment\Model\PaymentInterface;
 use Sylius\Component\Payment\PaymentTransitions;
 use Sylius\Component\Promotion\Model\Promotion;
-use Symfony\Component\Routing\Annotation\Route;
+use Sylius\Component\Promotion\Model\PromotionAction;
 use Sylius\Component\Taxation\Model\TaxCategory;
 use Sylius\Component\Taxation\Model\TaxRate;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 
 class AdminController extends Controller
 {
@@ -1214,6 +1219,10 @@ class AdminController extends Controller
     {
         $promotions = $this->get('sylius.repository.promotion')->findAll();
 
+        $promotionCoupons = $this->get('sylius.repository.promotion_coupon')->findAll();
+
+        // var_dump(count($promotionCoupons));
+
         return $this->render('@App/admin/promotions.html.twig', [
             'promotions' => $promotions,
         ]);
@@ -1256,6 +1265,83 @@ class AdminController extends Controller
         return $this->render('@App/admin/promotion_coupon.html.twig', [
             'form' => $form->createView(),
         ]);
+    }
+
+    /**
+     * @Route("/admin/promotions/credit-notes/new", name="admin_new_credit_note")
+     */
+    public function newCreditNoteAction(Request $request)
+    {
+        $form = $this->createForm(CreditNoteType::class);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $data = $form->getData();
+
+            $promotion = $this->get('sylius.factory.promotion')->createNew();
+            $promotion->setName('Credit note');
+            $promotion->setCouponBased(true);
+            $promotion->setCode(Uuid::uuid4()->toString());
+            $promotion->setPriority(1);
+
+            $promotionAction = new PromotionAction();
+            $promotionAction->setType(FixedDiscountPromotionActionCommand::TYPE);
+            $promotionAction->setConfiguration([
+                'amount' => $data['amount']
+            ]);
+
+            $promotion->addAction($promotionAction);
+
+            $promotionRule = $this->get('sylius.factory.promotion_rule')->createNew();
+            $promotionRule->setType(IsCustomerRuleChecker::TYPE);
+            $promotionRule->setConfiguration([
+                'username' => $data['username']
+            ]);
+
+            $promotion->addRule($promotionRule);
+
+            do {
+                $hash = bin2hex(random_bytes(20));
+                $code = strtoupper(substr($hash, 0, 6));
+            } while ($this->isUsedCouponCode($code));
+
+            $promotionCoupon = $this->get('sylius.factory.promotion_coupon')->createNew();
+            $promotionCoupon->setCode($code);
+            $promotionCoupon->setPerCustomerUsageLimit(1);
+
+            $promotion->addCoupon($promotionCoupon);
+
+            // $instruction = new \Sylius\Component\Promotion\Generator\PromotionCouponGeneratorInstruction();
+            // $instruction->setAmount(1);
+            // $instruction->setCodeLength(4);
+
+            // $generator = $this->get('sylius.promotion_coupon_generator');
+
+            // $promotionCoupon = $generator->generate($promotion, $instruction);
+
+            // var_dump($promotionCoupon->getCode());
+
+            $this->get('sylius.repository.promotion')->add($promotion);
+
+            // print_r($data);
+            // exit;
+
+            // $promotion->addCoupon($promotionCoupon);
+
+            // $this->get('sylius.manager.promotion')->flush();
+
+            return $this->redirectToRoute('admin_promotions');
+        }
+
+        return $this->render('@App/admin/promotion_credit_note.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
+    private function isUsedCouponCode(string $code): bool
+    {
+        return null !== $this->get('sylius.repository.promotion_coupon')->findOneBy(['code' => $code]);
     }
 
     /**

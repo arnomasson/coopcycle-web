@@ -5,6 +5,19 @@
 {% endblock %}
 
 {% block content %}
+<div class="text-right">
+  <div class="dropdown">
+    <button id="add-promotion" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="btn btn-success">
+      <i class="fa fa-plus"></i> {{ 'basics.add'|trans }}
+      <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="add-promotion">
+      <li><a href="#">{{ 'promotions.add_free_delivery_coupon'|trans }}</a></li>
+      <li><a href="{{ path('admin_new_credit_note') }}">{{ 'promotions.create_credit_note_coupon'|trans }}</a></li>
+    </ul>
+  </div>
+</div>
+
 <table class="table task-table">
   <thead>
     <th>#</th>
@@ -12,6 +25,7 @@
   </thead>
   <tbody>
   {% for promotion in promotions %}
+    <tr>
       <td width="5%">
         <a href="{{ path('admin_promotion', { id: promotion.id }) }}">
           #{{ promotion.id }}
