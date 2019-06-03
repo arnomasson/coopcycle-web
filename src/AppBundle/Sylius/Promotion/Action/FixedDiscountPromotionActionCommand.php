@@ -40,7 +40,7 @@ final class FixedDiscountPromotionActionCommand implements PromotionActionComman
         }
 
         $adjustment = $this->createAdjustment($promotion);
-        $adjustment->setAmount($configuration['amount'] * 1);
+        $adjustment->setAmount((int) $configuration['amount'] * -1);
 
         $subject->addAdjustment($adjustment);
 
