@@ -23,6 +23,7 @@
   </thead>
   <tbody>
   {% for coupon in promotion.coupons %}
+    <tr>
       <td width="5%">
         <a href="{{ path('admin_promotion_coupon', { id: promotion.id, code: coupon.code }) }}">
           {{ coupon.code }}

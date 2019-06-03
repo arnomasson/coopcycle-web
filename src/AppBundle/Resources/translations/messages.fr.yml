@@ -727,6 +727,8 @@ api_apps.created.message: Le client a bien été ajouté. Utilisez les identifia
 
 promotions.breadcrumb: Promotions
 promotions.breadcrumb.new_credit_note: Nouvel avoir commercial
+promotions.heading.free_delivery: Livraison offerte
+promotions.heading.credit_note: Avoirs commerciaux
 promotions.promotion_coupon.success: Votre code promotionnel %code% a été pris en compte
 promotions.add_free_delivery_coupon: Ajouter un code promotionnel « Livraison offerte »
 promotions.create_credit_note_coupon: Créer un avoir commercial pour un·e client·e

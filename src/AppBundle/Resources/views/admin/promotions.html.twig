@@ -18,24 +18,93 @@
   </div>
 </div>
 
+<h4 class="text-center">
+  {{ 'promotions.heading.free_delivery'|trans }}
+</h4>
+
 <table class="table task-table">
   <thead>
-    <th>#</th>
-    <th>{% trans %}basics.name{% endtrans %}</th>
+    <th>{% trans %}sylius.ui.code{% endtrans %}</th>
+    <th>{% trans %}sylius.form.promotion_coupon.usage_limit{% endtrans %}</th>
+    <th>{% trans %}sylius.form.promotion_coupon.per_customer_usage_limit{% endtrans %}</th>
+    <th>{% trans %}sylius.form.promotion_coupon.expires_at{% endtrans %}</th>
+    <th class="text-right">{% trans %}promotion_coupon.used.label{% endtrans %}</th>
   </thead>
   <tbody>
-  {% for promotion in promotions %}
+  {% for coupon in free_delivery_coupons %}
     <tr>
       <td width="5%">
-        <a href="{{ path('admin_promotion', { id: promotion.id }) }}">
-          #{{ promotion.id }}
+        <a href="#">
+          {{ coupon.code }}
         </a>
       </td>
+      <td width="20%">
+        {{ coupon.usageLimit }}
+      </td>
+      <td width="20%">
+        {{ coupon.perCustomerUsageLimit }}
+      </td>
       <td>
-        {{ promotion.name }}
+        {% if coupon.expiresAt is not empty %}
+          {{ coupon.expiresAt|localizeddate('short', 'short') }}
+        {% endif %}
+      </td>
+      <td class="text-right">
+        {{ coupon.used }}
       </td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
+
+<h4 class="text-center">
+  {{ 'promotions.heading.credit_note'|trans }}
+</h4>
+
+<table class="table task-table">
+  <thead>
+    <th>{% trans %}sylius.ui.code{% endtrans %}</th>
+    <th>{% trans %}profile.username{% endtrans %}</th>
+    <th>{% trans %}form.credit_note.amount.label{% endtrans %}</th>
+    <th class="text-right">{% trans %}promotion_coupon.used.label{% endtrans %}</th>
+  </thead>
+  <tbody>
+  {% for coupon in credit_note_coupons %}
+    {% set promotion_rules = coupon.promotion.rules %}
+    {% set promotion_actions = coupon.promotion.actions %}
+
+    {% set username = '' %}
+    {% for promotion_rule in promotion_rules %}
+      {% if promotion_rule.type == 'is_customer' %}
+        {% set username = promotion_rule.configuration.username %}
+      {% endif %}
+    {% endfor %}
+
+    {% set amount = 0 %}
+    {% for promotion_action in promotion_actions %}
+      {% if promotion_action.type == 'order_fixed_discount' %}
+        {% set amount = promotion_action.configuration.amount %}
+      {% endif %}
+    {% endfor %}
+
+    <tr>
+      <td width="5%">
+        <a href="#">
+          {{ coupon.code }}
+        </a>
+      </td>
+      <td width="20%">
+        {{ username }}
+      </td>
+      <td width="20%">
+        {{ amount|price_format }}
+      </td>
+      <td class="text-right">
+        {{ coupon.used }}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
 {% endblock %}

@@ -1221,10 +1221,23 @@ class AdminController extends Controller
 
         $promotionCoupons = $this->get('sylius.repository.promotion_coupon')->findAll();
 
+        $freeDeliveryCoupons = [];
+        $creditNoteCoupons = [];
+
+        foreach ($promotionCoupons as $promotionCoupon) {
+            if ($promotionCoupon->getPromotion()->getCode() === 'FREE_DELIVERY') {
+                $freeDeliveryCoupons[] = $promotionCoupon;
+            } else {
+                $creditNoteCoupons[] = $promotionCoupon;
+            }
+        }
+
         // var_dump(count($promotionCoupons));
 
         return $this->render('@App/admin/promotions.html.twig', [
             'promotions' => $promotions,
+            'free_delivery_coupons' => $freeDeliveryCoupons,
+            'credit_note_coupons' => $creditNoteCoupons,
         ]);
     }
 
@@ -1312,24 +1325,7 @@ class AdminController extends Controller
 
             $promotion->addCoupon($promotionCoupon);
 
-            // $instruction = new \Sylius\Component\Promotion\Generator\PromotionCouponGeneratorInstruction();
-            // $instruction->setAmount(1);
-            // $instruction->setCodeLength(4);
-
-            // $generator = $this->get('sylius.promotion_coupon_generator');
-
-            // $promotionCoupon = $generator->generate($promotion, $instruction);
-
-            // var_dump($promotionCoupon->getCode());
-
             $this->get('sylius.repository.promotion')->add($promotion);
-
-            // print_r($data);
-            // exit;
-
-            // $promotion->addCoupon($promotionCoupon);
-
-            // $this->get('sylius.manager.promotion')->flush();
 
             return $this->redirectToRoute('admin_promotions');
         }
